@@ -49,11 +49,11 @@ static char **todo_lines = NULL;
  */
 static void print_usage(const char *prog_name) {
     printf("Usage:\n");
-    printf("  %s \"<task>\"      - Add a new task to %s.\n", prog_name, TODOS_FILE);
-    printf("  %s list          - List all unfinished tasks.\n", prog_name);
-    printf("  %s check <index> - Mark the <index>th unfinished task as finished.\n", prog_name);
+    printf("  %s \"<task>\"       - Add a new task to %s.\n", prog_name, TODOS_FILE);
+    printf("  %s list           - List all unfinished tasks.\n", prog_name);
+    printf("  %s check <index>  - Mark the <index>th unfinished task as finished.\n", prog_name);
     printf("  %s remove <index> - Remove the <index>th unfinished task.\n", prog_name);
-    printf("  %s clean         - Remove all finished tasks.\n", prog_name);
+    printf("  %s clean          - Remove all finished tasks.\n", prog_name);
 }
 
 /**
