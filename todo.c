@@ -293,8 +293,8 @@ static void list_todos(void) {
     for (int i = 0; i < count; i++) {
         int line_index = unfinished_tasks[i];
         char *trimmed_line = skip_leading_whitespace(todo_lines[line_index]);
-        // Print as "1: - [ ] something"
-        printf("%d: %s", i + 1, trimmed_line);
+        // Print as "1) something"
+        printf("%d) %s", i + 1, trimmed_line + 6);
     }
 
     free(unfinished_tasks);
