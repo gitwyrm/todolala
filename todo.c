@@ -26,21 +26,24 @@
  *   5) Remove all finished tasks:
  *       todo clean
  *
- * The unfinished tasks have the format:  - [ ] my task
- * The finished tasks have the format:    - [x] my task
+ * If you want to use a different file, supply it as the first argument:
  *
- * The code considers "the Nth unfinished todo" by counting only lines
- * that start with "- [ ]".
+ *   todo README.md "my task"
+ *   todo README.md list
+ *   todo some_other.md check 2
  *
- * Lines that don't start with "- [ ]" or "- [x]" are ignored for indexing,
- * so you can have extra text in your todo.md.
+ * etc. If no filename is given, the default is todo.md.
  */
 
-#define TODOS_FILE "todo.md"
 #define MAX_LINE_LENGTH 256
 
 /**
- * Global pointer holding all lines from TODO file.
+ * Global pointer to the filename in use (defaults to "todo.md").
+ */
+static const char *todos_filename = "todo.md";
+
+/**
+ * Global pointer holding all lines from the TODO file.
  */
 static char **todo_lines = NULL;
 
@@ -49,11 +52,11 @@ static char **todo_lines = NULL;
  */
 static void print_usage(const char *prog_name) {
     printf("Usage:\n");
-    printf("  %s \"<task>\"       - Add a new task to %s.\n", prog_name, TODOS_FILE);
-    printf("  %s list           - List all unfinished tasks.\n", prog_name);
-    printf("  %s check <index>  - Mark the <index>th unfinished task as finished.\n", prog_name);
-    printf("  %s remove <index> - Remove the <index>th unfinished task.\n", prog_name);
-    printf("  %s clean          - Remove all finished tasks.\n", prog_name);
+    printf("  %s [<file.md>] \"<task>\"       - Add a new task (default file: todo.md).\n", prog_name);
+    printf("  %s [<file.md>] list           - List all unfinished tasks.\n", prog_name);
+    printf("  %s [<file.md>] check <index>  - Mark the <index>th unfinished task as finished.\n", prog_name);
+    printf("  %s [<file.md>] remove <index> - Remove the <index>th unfinished task.\n", prog_name);
+    printf("  %s [<file.md>] clean          - Remove all finished tasks.\n", prog_name);
 }
 
 /**
@@ -72,9 +75,10 @@ static char *skip_leading_whitespace(char *str) {
  * Returns NULL if the file doesn't exist or is empty.
  */
 static char **get_all_lines(void) {
-    FILE *file = fopen(TODOS_FILE, "r");
+    FILE *file = fopen(todos_filename, "r");
     if (!file) {
-        // "No todos found" is not necessarily an error; could just be an empty file.
+        // It's not necessarily an error if the file doesn't exist;
+        // we may be creating a new one.
         return NULL;
     }
 
@@ -287,7 +291,6 @@ static void list_todos(void) {
     }
 
     for (int i = 0; i < count; i++) {
-        // Show the original line, skipping leading spaces if you want
         int line_index = unfinished_tasks[i];
         char *trimmed_line = skip_leading_whitespace(todo_lines[line_index]);
         // Print as "1: - [ ] something"
@@ -298,14 +301,14 @@ static void list_todos(void) {
 }
 
 /**
- * Append a new task in Markdown format ("- [ ] <task>") to todo.md.
+ * Append a new task in Markdown format ("- [ ] <task>") to the current file.
  *
  * @param task The text of the task to add.
  */
 static void add_todo(const char *task) {
-    FILE *file = fopen(TODOS_FILE, "a");
+    FILE *file = fopen(todos_filename, "a");
     if (!file) {
-        printf("Error opening %s for writing.\n", TODOS_FILE);
+        printf("Error opening %s for writing.\n", todos_filename);
         return;
     }
 
@@ -314,15 +317,15 @@ static void add_todo(const char *task) {
 }
 
 /**
- * Save todo_lines to the todo file (overwrite).
+ * Save todo_lines to the current file (overwrite).
  */
 static void save_todos(void) {
     // If we have never read any lines, there's nothing to save
     if (!todo_lines) return;
 
-    FILE *file = fopen(TODOS_FILE, "w");
+    FILE *file = fopen(todos_filename, "w");
     if (!file) {
-        printf("Error opening %s for writing.\n", TODOS_FILE);
+        printf("Error opening %s for writing.\n", todos_filename);
         return;
     }
 
@@ -339,37 +342,60 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
-    // Load lines from file (this populates todo_lines globally)
+    /*
+     * Check if the first argument ends with ".md". If yes, treat it as a filename
+     * and shift our parsing index so the next argument is the command/task.
+     */
+    int argIndex = 1;
+    size_t len = strlen(argv[1]);
+    if (len > 3 && strcmp(argv[1] + (len - 3), ".md") == 0) {
+        // Use the given file as our todos_filename
+        todos_filename = argv[1];
+        argIndex = 2; // Next argument is the command/task
+    }
+
+    // If we consumed the filename, but there are no more args, print usage
+    if (argIndex > (argc - 1)) {
+        print_usage(argv[0]);
+        return 1;
+    }
+
+    // Load lines from the selected file
     todo_lines = get_all_lines();
 
-    if (strcmp(argv[1], "list") == 0) {
+    /*
+     * Now parse the next argument. If it's "list", "check", "remove", or "clean",
+     * do the corresponding operation; otherwise, assume it's a new task.
+     */
+    if (strcmp(argv[argIndex], "list") == 0) {
         list_todos();
     }
-    else if (strcmp(argv[1], "check") == 0) {
-        if (argc < 3) {
-            printf("Usage: %s check <index>\n", argv[0]);
+    else if (strcmp(argv[argIndex], "check") == 0) {
+        if (argIndex + 1 >= argc) {
+            printf("Usage: %s [<file.md>] check <index>\n", argv[0]);
             return 1;
         }
-        int index = atoi(argv[2]);
+        int index = atoi(argv[argIndex + 1]);
         check_todo(index);
         save_todos();
     }
-    else if (strcmp(argv[1], "remove") == 0) {
-        if (argc < 3) {
-            printf("Usage: %s remove <index>\n", argv[0]);
+    else if (strcmp(argv[argIndex], "remove") == 0) {
+        if (argIndex + 1 >= argc) {
+            printf("Usage: %s [<file.md>] remove <index>\n", argv[0]);
             return 1;
         }
-        int index = atoi(argv[2]);
+        int index = atoi(argv[argIndex + 1]);
         remove_task(index);
         save_todos();
     }
-    else if (strcmp(argv[1], "clean") == 0) {
+    else if (strcmp(argv[argIndex], "clean") == 0) {
         remove_finished_tasks();
         save_todos();
     }
     else {
         // Assume the argument is a new task to add
-        add_todo(argv[1]);
+        // (If there are multiple arguments, you might want to join them)
+        add_todo(argv[argIndex]);
     }
 
     return 0;
