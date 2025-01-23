@@ -24,9 +24,21 @@ Without arguments, it prints out help information:
 
 ```
 Usage:
-  todo "<task>"       - Add a new task to todo.md.
-  todo list           - List all unfinished tasks.
-  todo check <index>  - Mark the <index>th unfinished task as finished.
-  todo remove <index> - Remove the <index>th unfinished task.
-  todo clean          - Remove all finished tasks.
+  todo [<file.md>] "<task>"       - Add a new task (default file: todo.md).
+  todo [<file.md>] list           - List all unfinished tasks.
+  todo [<file.md>] check <index>  - Mark the <index>th unfinished task as finished.
+  todo [<file.md>] remove <index> - Remove the <index>th unfinished task.
+  todo [<file.md>] clean          - Remove all finished tasks.
+```
+
+So to see all of the todos in this readme, you would do:
+
+```bash
+todo README.md list
+```
+
+If you don't specify a filename, todo.md is used, so you can also just use:
+
+```bash
+todo list
 ```
