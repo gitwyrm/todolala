@@ -24,7 +24,9 @@ Without arguments, it prints out help information:
 
 ```
 Usage:
-  todo "<task>"      - Add a new task to todo.md.
-  todo list          - List all unfinished tasks.
-  todo check <index> - Mark the <index>th unfinished task as finished.
+  todo "<task>"       - Add a new task to todo.md.
+  todo list           - List all unfinished tasks.
+  todo check <index>  - Mark the <index>th unfinished task as finished.
+  todo remove <index> - Remove the <index>th unfinished task.
+  todo clean          - Remove all finished tasks.
 ```
