@@ -1,0 +1,9 @@
+# Editors
+.vscode/
+
+# macOS
+.DS_Store
+
+# Zig
+.zig-cache/
+zig-out/
