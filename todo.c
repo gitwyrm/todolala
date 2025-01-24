@@ -26,6 +26,9 @@
  *   5) Remove all finished tasks:
  *       todo clean
  *
+ * It is also possible to use multiple indexes for the check and remove commands,
+ * and most of the commands have single letter abbreviations.
+ * 
  * If you want to use a different file, supply it as the first argument:
  *
  *   todo README.md "my task"
