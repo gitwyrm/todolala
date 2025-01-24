@@ -53,9 +53,9 @@ static char **todo_lines = NULL;
 static void print_usage(const char *prog_name) {
     printf("Usage:\n");
     printf("  %s [<file.md>] \"<task>\"       - Add a new task (default file: todo.md).\n", prog_name);
-    printf("  %s [<file.md>] list           - List all unfinished tasks.\n", prog_name);
-    printf("  %s [<file.md>] check <index>  - Mark the <index>th unfinished task as finished.\n", prog_name);
-    printf("  %s [<file.md>] remove <index> - Remove the <index>th unfinished task.\n", prog_name);
+    printf("  %s [<file.md>] l(ist)           - List all unfinished tasks.\n", prog_name);
+    printf("  %s [<file.md>] c(heck) <index>  - Mark the <index>th unfinished task as finished.\n", prog_name);
+    printf("  %s [<file.md>] r(emove) <index> - Remove the <index>th unfinished task.\n", prog_name);
     printf("  %s [<file.md>] clean          - Remove all finished tasks.\n", prog_name);
 }
 
@@ -366,11 +366,14 @@ int main(int argc, char *argv[]) {
     /*
      * Now parse the next argument. If it's "list", "check", "remove", or "clean",
      * do the corresponding operation; otherwise, assume it's a new task.
+     * 
+     * There are also one letter shortcuts for almost every command, so l for list,
+     * c for check and so on.
      */
-    if (strcmp(argv[argIndex], "list") == 0) {
+    if (strcmp(argv[argIndex], "list") == 0 || strcmp(argv[argIndex], "l") == 0) {
         list_todos();
     }
-    else if (strcmp(argv[argIndex], "check") == 0) {
+    else if (strcmp(argv[argIndex], "check") == 0 || strcmp(argv[argIndex], "c") == 0) {
         if (argIndex + 1 >= argc) {
             printf("Usage: %s [<file.md>] check <index>\n", argv[0]);
             return 1;
@@ -379,7 +382,7 @@ int main(int argc, char *argv[]) {
         check_todo(index);
         save_todos();
     }
-    else if (strcmp(argv[argIndex], "remove") == 0) {
+    else if (strcmp(argv[argIndex], "remove") == 0 || strcmp(argv[argIndex], "r") == 0) {
         if (argIndex + 1 >= argc) {
             printf("Usage: %s [<file.md>] remove <index>\n", argv[0]);
             return 1;
