@@ -366,6 +366,47 @@ static int compare_int_desc(const void *a, const void *b) {
     return (bi - ai);
 }
 
+/**
+ * Calls function pointer for each index in the given arguments.
+ * 
+ * @param argc Number of arguments.
+ * @param argv Array of arguments.
+ * @param index Index of the first index argument.
+ * @param fn Function pointer to a void function that takes an int.
+ * @return 0 if successful, 1 if there was an error.
+ */
+static int call_fn_with_indexes(int argc, char *argv[], int index, void (*fn)(int)) {
+    // Collect all indexes into an array
+    int numIndexes = 0;
+    int capacity = argc - index;
+    int *indexes = malloc(capacity * sizeof(int));
+    if (!indexes) {
+        perror("malloc");
+        exit(EXIT_FAILURE);
+    }
+
+    // Parse all remaining arguments as indexes
+    for (int i = index; i < argc; i++) {
+        int idx = atoi(argv[i]);
+        if (idx <= 0) {
+            printf("Skipping invalid index: %s\n", argv[i]);
+            continue;
+        }
+        indexes[numIndexes++] = idx;
+    }
+
+    // Sort the indexes in descending order so we handle highest first
+    qsort(indexes, numIndexes, sizeof(int), compare_int_desc);
+
+    // Call the fn on each requested index
+    for (int i = 0; i < numIndexes; i++) {
+        check_todo(indexes[i]);
+    }
+
+    free(indexes);
+    return 0;
+}
+
 int main(int argc, char *argv[]) {
     if (argc < 2) {
         print_usage(argv[0]);
@@ -409,35 +450,9 @@ int main(int argc, char *argv[]) {
             return 1;
         }
 
-        // Collect all indexes into an array
-        int numIndexes = 0;
-        int capacity = argc - (argIndex + 1);
-        int *indexes = malloc(capacity * sizeof(int));
-        if (!indexes) {
-            perror("malloc");
-            exit(EXIT_FAILURE);
-        }
-
-        // Parse all remaining arguments as indexes
-        for (int i = argIndex + 1; i < argc; i++) {
-            int idx = atoi(argv[i]);
-            if (idx <= 0) {
-                printf("Skipping invalid index: %s\n", argv[i]);
-                continue;
-            }
-            indexes[numIndexes++] = idx;
-        }
-
-        // Sort the indexes in descending order so we handle highest first
-        qsort(indexes, numIndexes, sizeof(int), compare_int_desc);
-
-        // Check each requested index, then save once
-        for (int i = 0; i < numIndexes; i++) {
-            check_todo(indexes[i]);
-        }
+        call_fn_with_indexes(argc, argv, argIndex + 1, check_todo);
 
         save_todos();
-        free(indexes);
     }
     else if (strcmp(argv[argIndex], "remove") == 0 || strcmp(argv[argIndex], "r") == 0) {
         if (argIndex + 1 >= argc) {
@@ -445,35 +460,9 @@ int main(int argc, char *argv[]) {
             return 1;
         }
 
-        // Collect all indexes into an array
-        int numIndexes = 0;
-        int capacity = argc - (argIndex + 1);
-        int *indexes = malloc(capacity * sizeof(int));
-        if (!indexes) {
-            perror("malloc");
-            exit(EXIT_FAILURE);
-        }
-
-        // Parse all remaining arguments as indexes
-        for (int i = argIndex + 1; i < argc; i++) {
-            int idx = atoi(argv[i]);
-            if (idx <= 0) {
-                printf("Skipping invalid index: %s\n", argv[i]);
-                continue;
-            }
-            indexes[numIndexes++] = idx;
-        }
-
-        // Sort the indexes in descending order
-        qsort(indexes, numIndexes, sizeof(int), compare_int_desc);
-
-        // Remove each requested index, then save once
-        for (int i = 0; i < numIndexes; i++) {
-            remove_task(indexes[i]);
-        }
+        call_fn_with_indexes(argc, argv, argIndex + 1, remove_task);
 
         save_todos();
-        free(indexes);
     }
     else if (strcmp(argv[argIndex], "clean") == 0) {
         remove_finished_tasks();
