@@ -302,14 +302,31 @@ static void list_todos(void) {
 
 /**
  * Append a new task in Markdown format ("- [ ] <task>") to the current file.
+ * 
+ * If the last line in the file has no newline at the end, adds a newline before the new task.
  *
  * @param task The text of the task to add.
  */
 static void add_todo(const char *task) {
     FILE *file = fopen(todos_filename, "a");
     if (!file) {
-        printf("Error opening %s for writing.\n", todos_filename);
+        printf("Error opening %s for appending.\n", todos_filename);
         return;
+    }
+
+    if (todo_lines) {
+        // Find the last line in the array
+        int i = 0;
+        while (todo_lines[i + 1] != NULL) {
+            i++;
+        }
+        char *last_line = todo_lines[i];
+        
+        // Check if last_line ends with a newline
+        size_t len = strlen(last_line);
+        if (len > 0 && last_line[len - 1] != '\n') {
+            fprintf(file, "\n");
+        }
     }
 
     fprintf(file, "- [ ] %s\n", task);
