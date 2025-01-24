@@ -52,11 +52,13 @@ static char **todo_lines = NULL;
  */
 static void print_usage(const char *prog_name) {
     printf("Usage:\n");
-    printf("  %s [<file.md>] \"<task>\"       - Add a new task (default file: todo.md).\n", prog_name);
-    printf("  %s [<file.md>] l(ist)           - List all unfinished tasks.\n", prog_name);
-    printf("  %s [<file.md>] c(heck) <index>  - Mark the <index>th unfinished task as finished.\n", prog_name);
-    printf("  %s [<file.md>] r(emove) <index> - Remove the <index>th unfinished task.\n", prog_name);
-    printf("  %s [<file.md>] clean          - Remove all finished tasks.\n", prog_name);
+    printf("  %s [<file.md>] \"<task>\"           - Add a new task (default file: todo.md).\n", prog_name);
+    printf("  %s [<file.md>] l(ist)             - List all unfinished tasks.\n", prog_name);
+    printf("  %s [<file.md>] c(heck) <index>    - Mark the <index>th unfinished task as finished.\n", prog_name);
+    printf("  %s [<file.md>] r(emove) <index>   - Remove the <index>th unfinished task.\n", prog_name);
+    printf("  %s [<file.md>] clean              - Remove all finished tasks.\n", prog_name);
+    printf("\n");
+    printf("You can also use multiple <index>es for check and remove commands, i.e. todo check 1 2 3.\n");
 }
 
 /**
@@ -353,6 +355,17 @@ static void save_todos(void) {
     fclose(file);
 }
 
+/**
+ * Comparison function for descending order of two ints.
+ * Used by qsort() when we want to process bigger indexes first.
+ */
+static int compare_int_desc(const void *a, const void *b) {
+    int ai = *(const int *)a;
+    int bi = *(const int *)b;
+    // Return negative if bi < ai so that bigger numbers come first
+    return (bi - ai);
+}
+
 int main(int argc, char *argv[]) {
     if (argc < 2) {
         print_usage(argv[0]);
@@ -395,18 +408,72 @@ int main(int argc, char *argv[]) {
             printf("Usage: %s [<file.md>] check <index>\n", argv[0]);
             return 1;
         }
-        int index = atoi(argv[argIndex + 1]);
-        check_todo(index);
+
+        // Collect all indexes into an array
+        int numIndexes = 0;
+        int capacity = argc - (argIndex + 1);
+        int *indexes = malloc(capacity * sizeof(int));
+        if (!indexes) {
+            perror("malloc");
+            exit(EXIT_FAILURE);
+        }
+
+        // Parse all remaining arguments as indexes
+        for (int i = argIndex + 1; i < argc; i++) {
+            int idx = atoi(argv[i]);
+            if (idx <= 0) {
+                printf("Skipping invalid index: %s\n", argv[i]);
+                continue;
+            }
+            indexes[numIndexes++] = idx;
+        }
+
+        // Sort the indexes in descending order so we handle highest first
+        qsort(indexes, numIndexes, sizeof(int), compare_int_desc);
+
+        // Check each requested index, then save once
+        for (int i = 0; i < numIndexes; i++) {
+            check_todo(indexes[i]);
+        }
+
         save_todos();
+        free(indexes);
     }
     else if (strcmp(argv[argIndex], "remove") == 0 || strcmp(argv[argIndex], "r") == 0) {
         if (argIndex + 1 >= argc) {
             printf("Usage: %s [<file.md>] remove <index>\n", argv[0]);
             return 1;
         }
-        int index = atoi(argv[argIndex + 1]);
-        remove_task(index);
+
+        // Collect all indexes into an array
+        int numIndexes = 0;
+        int capacity = argc - (argIndex + 1);
+        int *indexes = malloc(capacity * sizeof(int));
+        if (!indexes) {
+            perror("malloc");
+            exit(EXIT_FAILURE);
+        }
+
+        // Parse all remaining arguments as indexes
+        for (int i = argIndex + 1; i < argc; i++) {
+            int idx = atoi(argv[i]);
+            if (idx <= 0) {
+                printf("Skipping invalid index: %s\n", argv[i]);
+                continue;
+            }
+            indexes[numIndexes++] = idx;
+        }
+
+        // Sort the indexes in descending order
+        qsort(indexes, numIndexes, sizeof(int), compare_int_desc);
+
+        // Remove each requested index, then save once
+        for (int i = 0; i < numIndexes; i++) {
+            remove_task(indexes[i]);
+        }
+
         save_todos();
+        free(indexes);
     }
     else if (strcmp(argv[argIndex], "clean") == 0) {
         remove_finished_tasks();
