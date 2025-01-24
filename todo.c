@@ -3,6 +3,8 @@
 #include <string.h>
 #include <ctype.h>
 
+#include "todo.h"
+
 /*
  * This program uses a Markdown-based "todo" format, where each line is:
  *   - [ ] task
@@ -38,22 +40,13 @@
  * etc. If no filename is given, the default is todo.md.
  */
 
-#define MAX_LINE_LENGTH 256
-
-/**
- * Global pointer to the filename in use (defaults to "todo.md").
- */
-static const char *todos_filename = "todo.md";
-
-/**
- * Global pointer holding all lines from the TODO file.
- */
-static char **todo_lines = NULL;
+const char *todos_filename = NULL;
+char **todo_lines = NULL;
 
 /**
  * Print usage instructions to the console.
  */
-static void print_usage(const char *prog_name) {
+void print_usage(const char *prog_name) {
     printf("Usage:\n");
     printf("  %s [<file.md>] \"<task>\"           - Add a new task (default file: todo.md).\n", prog_name);
     printf("  %s [<file.md>] l(ist)             - List all unfinished tasks.\n", prog_name);
@@ -68,7 +61,7 @@ static void print_usage(const char *prog_name) {
  * Skip leading whitespace in a string and return a pointer to the first
  * non-whitespace character.
  */
-static char *skip_leading_whitespace(char *str) {
+char *skip_leading_whitespace(char *str) {
     while (isspace((unsigned char)*str)) {
         str++;
     }
@@ -79,7 +72,7 @@ static char *skip_leading_whitespace(char *str) {
  * Read all lines from the todo file into a NULL-terminated array of strings.
  * Returns NULL if the file doesn't exist or is empty.
  */
-static char **get_all_lines(void) {
+char **get_all_lines(void) {
     FILE *file = fopen(todos_filename, "r");
     if (!file) {
         // It's not necessarily an error if the file doesn't exist;
@@ -122,7 +115,7 @@ static char **get_all_lines(void) {
  * @param count_out Output parameter for number of unfinished tasks.
  * @return Pointer to a dynamically allocated int array (line indices).
  */
-static int *get_unfinished_tasks(int *count_out) {
+int *get_unfinished_tasks(int *count_out) {
     int *unfinished_tasks = NULL;
     int num_unfinished = 0;
 
@@ -155,7 +148,7 @@ static int *get_unfinished_tasks(int *count_out) {
  * @param count_out Output parameter for number of finished tasks.
  * @return Pointer to a dynamically allocated int array (line indices).
  */
-static int *get_finished_tasks(int *count_out) {
+int *get_finished_tasks(int *count_out) {
     int *finished_tasks = NULL;
     int num_finished = 0;
 
@@ -186,7 +179,7 @@ static int *get_finished_tasks(int *count_out) {
  *
  * @param line_index Index in todo_lines to delete.
  */
-static void delete_line(int line_index) {
+void delete_line(int line_index) {
     free(todo_lines[line_index]);
     // Shift lines down
     for (int i = line_index; todo_lines[i]; i++) {
@@ -199,7 +192,7 @@ static void delete_line(int line_index) {
  *
  * We remove from last to first so indices are not messed up after each removal.
  */
-static void remove_finished_tasks(void) {
+void remove_finished_tasks(void) {
     int count = 0;
     int *finished_tasks = get_finished_tasks(&count);
     if (!finished_tasks || count == 0) {
@@ -218,7 +211,7 @@ static void remove_finished_tasks(void) {
 /**
  * Remove the Nth unfinished task (1-based index).
  */
-static void remove_task(int index) {
+void remove_task(int index) {
     if (index <= 0) {
         printf("Invalid index: %d\n", index);
         return;
@@ -250,7 +243,7 @@ static void remove_task(int index) {
  *
  * @param index The 1-based index of the unfinished task to mark as finished.
  */
-static void check_todo(int index) {
+void check_todo(int index) {
     if (index <= 0) {
         printf("Invalid index: %d\n", index);
         return;
@@ -286,7 +279,7 @@ static void check_todo(int index) {
  * List all unfinished tasks (lines beginning with "- [ ]") from todo_lines
  * with their 1-based indices.
  */
-static void list_todos(void) {
+void list_todos(void) {
     int count = 0;
     int *unfinished_tasks = get_unfinished_tasks(&count);
     if (!unfinished_tasks || count == 0) {
@@ -312,7 +305,7 @@ static void list_todos(void) {
  *
  * @param task The text of the task to add.
  */
-static void add_todo(const char *task) {
+void add_todo(const char *task) {
     FILE *file = fopen(todos_filename, "a");
     if (!file) {
         printf("Error opening %s for appending.\n", todos_filename);
@@ -341,7 +334,7 @@ static void add_todo(const char *task) {
 /**
  * Save todo_lines to the current file (overwrite).
  */
-static void save_todos(void) {
+void save_todos(void) {
     // If we have never read any lines, there's nothing to save
     if (!todo_lines) return;
 
@@ -362,7 +355,7 @@ static void save_todos(void) {
  * Comparison function for descending order of two ints.
  * Used by qsort() when we want to process bigger indexes first.
  */
-static int compare_int_desc(const void *a, const void *b) {
+int compare_int_desc(const void *a, const void *b) {
     int ai = *(const int *)a;
     int bi = *(const int *)b;
     // Return negative if bi < ai so that bigger numbers come first
@@ -378,7 +371,7 @@ static int compare_int_desc(const void *a, const void *b) {
  * @param fn Function pointer to a void function that takes an int.
  * @return 0 if successful, 1 if there was an error.
  */
-static int call_fn_with_indexes(int argc, char *argv[], int index, void (*fn)(int)) {
+int call_fn_with_indexes(int argc, char *argv[], int index, void (*fn)(int)) {
     // Collect all indexes into an array
     int numIndexes = 0;
     int capacity = argc - index;
@@ -410,11 +403,15 @@ static int call_fn_with_indexes(int argc, char *argv[], int index, void (*fn)(in
     return 0;
 }
 
+#ifndef TESTING
 int main(int argc, char *argv[]) {
     if (argc < 2) {
         print_usage(argv[0]);
         return 1;
     }
+
+    todos_filename = "todo.md";
+    todo_lines = NULL;
 
     /*
      * Check if the first argument ends with ".md". If yes, treat it as a filename
@@ -479,3 +476,4 @@ int main(int argc, char *argv[]) {
 
     return 0;
 }
+#endif
