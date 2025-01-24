@@ -403,7 +403,7 @@ static int call_fn_with_indexes(int argc, char *argv[], int index, void (*fn)(in
 
     // Call the fn on each requested index
     for (int i = 0; i < numIndexes; i++) {
-        check_todo(indexes[i]);
+        fn(indexes[i]);
     }
 
     free(indexes);
