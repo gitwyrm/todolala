@@ -2,7 +2,7 @@
 
 A simple command-line todo app written in C using the Zig build system.
 
-It stores todos using the markdown task syntax `- [x] my task` in a todo.md file in the current directory. Anything that isn't a task is ignored, so you can add other markdown text in the file.
+It stores todos using the markdown task syntax `- [x] my task` in a todo.md file in the current directory. Anything that isn't a task is ignored, so you can add other markdown to the file and Todolala will not touch it. It is actually used to manage the todo section at the bottom of this readme.
 
 # Building
 
@@ -57,3 +57,8 @@ If you don't specify a filename, todo.md is used, so you can also just use:
 todo list
 todo check 2 6
 ```
+
+# ToDo
+
+- [ ] command to sort todos with finished tasks at bottom
+- [ ] command to list finished todos
